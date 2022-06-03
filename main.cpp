@@ -1,18 +1,36 @@
 #include "bits/stdc++.h"
 
 using namespace std;
-
+random_device rd;
 vector<int> visitado; 
 vector<vector<pair<int,int>>> lista_adj;
-vector<int> resultados;
+vector<pair<int,int>> resultados;
 
-void dfs(int v, int custo, int q_vis){
+void dfs(int v, int custo_ida, int custo_volta, bool ida){
     visitado[v] = 1;
     vector<pair<int, int>> melhores;
+    
     for(auto it: lista_adj[v]){
+
         if(visitado[it.second])
             continue;
+        
+        melhores.push_back(it);
     }
+    
+    if(!melhores.size())
+        return;
+
+    int escolhido = rd() % (melhores.size() < 3 ? melhores.size():3);
+    sort(melhores.begin(), melhores.end(), greater<pair<int,int>>());
+    custo_ida += melhores[escolhido].first*ida;
+    custo_volta += melhores[escolhido].first*(!ida);
+    v = melhores[escolhido].second;
+
+    if(ida)
+        resultados.push_back({custo_ida, custo_volta});
+
+    dfs(v, custo_ida, custo_volta, !ida);  
 }
 
 int main(){

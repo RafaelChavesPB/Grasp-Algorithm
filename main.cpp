@@ -1,6 +1,6 @@
 #include "bits/stdc++.h"
-#define A_ 1
-#define B_ 1
+#define A_ -1
+#define B_ -1
 #define C_ 1
 
 using namespace std;
@@ -30,7 +30,7 @@ void dfs(int v, int custo_ida, int custo_volta, bool ida) {
 		return;
 
 	int escolhido = rd() % (melhores.size() < 3 ? melhores.size() : 3);
-	sort(melhores.begin(), melhores.end(), greater<pair<int, int>>());
+	sort(melhores.begin(), melhores.end());
 	custo_ida += melhores[escolhido].first * ida;
 	custo_volta += melhores[escolhido].first * (!ida);
 	v = melhores[escolhido].second;
@@ -42,22 +42,36 @@ void dfs(int v, int custo_ida, int custo_volta, bool ida) {
 }
 
 void grasp(int n) {
-	visitados.assign(n, 1);
+	visitados.assign(n, 0);
 	resultados = vector<pair<int, int>>(1, {0, 0});
 	caminho.clear();
-    
+
 	dfs(0, 0, 0, true);
 	int idx = 0;
-    int melhor_resultado = 0;
+	int melhor_resultado = 0;
+	int cont = 0;
     
-    for(int i = 0; i < resultados.size(); i++)
-        if(funcao_objetiva(resultados[i].first, resultados[i].second, 2*i) > melhor_resultado)
-            idx = i;
+	cout << "Vertices - Custo ida - Custo Volta" << endl;
+	for (auto it : resultados)
+		cout << 2 * cont++ << ' ' << it.first << ' ' << it.second << endl;
+	cout << endl;
+	
+    cout << "Caminho" << endl;
+	for (auto it : caminho)
+		cout << it << ' ';
+	cout << endl;
     
-    cout << resultados[idx].first << ' ' << resultados[idx].second << ' ' << 2*idx << endl;
-    for(int i = 0; i < 2*idx; i++)
-        cout << caminho[i] << ' ';
-    cout << endl;
+	// for(int i = 0; i < resultados.size(); i++)
+	//     if(funcao_objetiva(resultados[i].first, resultados[i].second, 2*i) >
+	//     melhor_resultado)
+	//         idx = i;
+
+	// cout << resultados[idx].first << ' ' << resultados[idx].second << ' ' <<
+	// 2*idx << endl;
+
+	// for(int i = 0; i < 2*idx; i++)
+	//     cout << caminho[i] << ' ';
+	// cout << endl;
 }
 
 int main() {
@@ -71,4 +85,14 @@ int main() {
 		cin >> a >> b >> c;
 		lista_adj[a].push_back({c, b});
 	}
+
+	// for (int i = 0; i < n; i++){
+	//     cout << i << ':';
+	//     for(auto v: lista_adj[i]){
+	//         cout << ' ' << v.first <<':'<< v.second;
+	//     }
+	//     cout << endl;
+	// }
+
+	grasp(n);
 }

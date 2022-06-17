@@ -1,0 +1,40 @@
+Melhor Resultado
+3835 275 10 0
+0 10 2 9 3 7 4 6 5 8 
+
+Melhor Resultado
+2821 275 10 0
+0 8 2 7 4 9 1 10 3 6 
+
+Melhor Resultado
+4043 250 10 0
+0 6 1 8 2 9 5 7 4 10 
+
+Melhor Resultado
+2364 225 10 0
+0 6 2 8 4 9 5 10 3 7 
+
+Melhor Resultado
+3100 300 10 0
+0 6 1 10 3 8 5 7 2 9 
+
+Melhor Resultado
+3844 275 10 0
+0 10 1 9 4 7 2 6 5 8 
+
+Melhor Resultado
+3126 325 10 0
+0 8 2 7 3 10 5 9 1 6 
+
+Melhor Resultado
+1472 275 10 0
+0 6 4 9 1 8 2 7 3 10 
+
+Melhor Resultado
+3458 275 10 0
+0 6 4 8 1 10 2 7 3 9 
+
+Melhor Resultado
+3843 200 10 0
+0 10 1 6 2 8 3 7 4 9 
+

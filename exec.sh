@@ -1,6 +1,5 @@
-g++ main.cpp -o main
-for i in $(seq 1 5)
+g++ main.cpp -o main && rm output.txt &&
+for i in $(seq 1 10)
 do
-    time ./main < input.txt > $i
-    echo $i
+    ./main < input.txt >> output.txt
 done 

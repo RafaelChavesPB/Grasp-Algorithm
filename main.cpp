@@ -52,7 +52,7 @@ int obter_linha_inicial(int linhas);
 void dfs(int v, int custo_ida, int custo_volta, bool ida);
 Solucao grasp(int n, int linha_inicial);
 
-// O(log(N)*N²)
+// O(P*N³)
 int main(int argc, char *argv[])
 {
 	double inicio = clock();

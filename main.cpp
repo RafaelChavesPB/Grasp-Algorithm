@@ -201,7 +201,7 @@ void Solucao::obter_melhor_resultado()
 void Solucao::print_resultado()
 {
 	cout << setprecision(5) << fixed << this->melhor_resultado / (A * this->qtd_vertices)
-		 << "  |  " << this->tempo << " ms" << endl;
+		 << "  |  " << setw(8) <<this->tempo << " ms" << endl;
 }
 
 // O(1)

@@ -1,5 +1,6 @@
-rm output.txt 
+rm grasp_result
+g++ main.cpp -o main
 for input in graphs/*
 do
-    ./main $input < $input >> output.txt
+    ./main $input < $input >>  grasp_result
 done

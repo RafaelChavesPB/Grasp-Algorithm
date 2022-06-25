@@ -1,10 +1,9 @@
 #include "bits/stdc++.h"
 #define ALPHA 3
 #define OMEGA 3
-#define AMOSTRAS 100
+#define LIMITE 1
 #define TOP 3
-#define A 450
-
+#define A 350.0
 using namespace std;
 
 void debug(string message)
@@ -17,8 +16,8 @@ vector<vector<int>> matriz_adj;
 vector<vector<pair<int, int>>> lista_adj;
 
 // Variáveis necessárias criação da solução
-vector<int> visitados, dist, ident;
-int lim_custo_mov;
+vector<int> visitados;
+int linhas_a, linhas_b;
 random_device rd;
 
 // Váriaveis que descrevem a solução atual
@@ -27,9 +26,9 @@ vector<int> caminho;
 
 struct Solucao
 {
+	int melhor_resultado, idx, qtd_vertices, tempo;
 	vector<int> caminho;
 	vector<pair<int, int>> resultados_parciais;
-	int melhor_resultado, idx, qtd_vertices;
 
 	Solucao();
 	Solucao(vector<int> &caminho_, vector<pair<int, int>> &resultados_);
@@ -38,42 +37,33 @@ struct Solucao
 	void trocar_volta(int a, int b);
 	void reposicionar_pares(int idx_a, int idx_b);
 	void recalc_resultado();
+	void obter_tempo(clock_t inicio);
 	void obter_melhor_resultado();
-	void print_melhor_resultado();
+	void print_resultado();
 	void print_melhor_caminho();
-	void print_resultado_completo();
+	void print_resultado_detalhado();
 };
 
-void busca_local(Solucao &atual);
-void obter_ordem(vector<pair<int,int>> &v);
-int calc_custo_mov(int atual, vector<int> &caminho_atual);
+bool bl_linhas_a(Solucao &atual);
+bool bl_linhas_b(Solucao &atual);
+void bl_nojump(Solucao &atual, int lado);
+void obter_ordem(vector<pair<int, int>> &v);
 int obter_linha_inicial(int linhas);
 void dfs(int v, int custo_ida, int custo_volta, bool ida);
 Solucao grasp(int n, int linha_inicial);
 
 // O(log(N)*N²)
-int main()
+int main(int argc, char *argv[])
 {
-	int n, m, linhas_a, linhas_b, temp;
+	double inicio = clock();
+
+	int n, m, temp;
 	cin >> linhas_a >> linhas_b;
 	n = linhas_a + linhas_b;
 	m = linhas_a * linhas_b * 2;
 
 	lista_adj.assign(n, vector<pair<int, int>>());
 	matriz_adj.assign(n, vector<int>(n, 0));
-
-	cin >> lim_custo_mov;
-	for (int i = 0; i < n; i++)
-	{
-		dist.push_back(0);
-		cin >> dist.back();
-	}
-
-	for (int i = 0; i < n; i++)
-	{
-		ident.push_back(0);
-		cin >> ident.back();
-	}
 
 	for (int i = 0; i < m; i++)
 	{
@@ -84,35 +74,46 @@ int main()
 	}
 
 	vector<Solucao> solucoes;
-	for (int i = 0; i < AMOSTRAS; i++)
+	while ((clock() - inicio) / (CLOCKS_PER_SEC * 1.0) < LIMITE)
 	{
-		Solucao atual = grasp(n, obter_linha_inicial(linhas_a));
-		solucoes.push_back(atual);
+		int linha_inicial = obter_linha_inicial(linhas_a);
+		Solucao a = grasp(n, 0);
+		a.obter_tempo(inicio);
+		auto b = a;
+
+		bl_nojump(a, 0);
+		while (bl_linhas_b(a))
+		{
+			a.obter_tempo(inicio);
+		}
+		bl_nojump(b, 1);
+		while (bl_linhas_a(b))
+		{
+			b.obter_tempo(inicio);
+		}
+
+		if (a.melhor_resultado > b.melhor_resultado)
+			solucoes.push_back(a);
+		else
+			solucoes.push_back(b);
 	}
 
+	sort(solucoes.begin(), solucoes.end(),
+		 [](Solucao &x, Solucao &y)
+		 {
+			 if (x.melhor_resultado == y.melhor_resultado)
+				 return x.tempo < y.tempo;
+			 return x.melhor_resultado > y.melhor_resultado;
+		 });
 
-	sort(solucoes.begin(), solucoes.end(), [](Solucao &x, Solucao &y)
-		 { return x.melhor_resultado > y.melhor_resultado; });
+	cout << argv[1] << ": ";
+	solucoes.front().print_resultado();
 
-	for (int i = 0; i < TOP; i++)
-	{	
-		solucoes[i].print_melhor_resultado();
-		solucoes[i].print_melhor_caminho();
-		cout << endl;
-	}
-
-	for(auto &it: solucoes)
-		busca_local(it);
-
-	sort(solucoes.begin(), solucoes.end(), [](Solucao &x, Solucao &y)
-		 { return x.melhor_resultado > y.melhor_resultado; });
-
-	for (int i = 0; i < TOP; i++)
-	{	
-		solucoes[i].print_melhor_resultado();
-		solucoes[i].print_melhor_caminho();
-		cout << endl;
-	}
+	// for (int i = 0; i < TOP; i++)
+	// {
+	// 	solucoes[i].print_resultado_detalhado();
+	// 	solucoes[i].print_melhor_caminho();
+	// }
 }
 
 // O(1)
@@ -159,21 +160,20 @@ void Solucao::recalc_resultado()
 	{
 		if (i % 2 == 0)
 		{
-			custo.first += calc_custo_mov(this->caminho[i], this->caminho) +
-						   matriz_adj[this->caminho[i]][this->caminho[i + 1]];
+			custo.first += matriz_adj[this->caminho[i]][this->caminho[i + 1]];
 			this->resultados_parciais[i / 2 + 1] = custo;
 		}
 		else
 		{
-			custo.second += calc_custo_mov(this->caminho[i], this->caminho);
+			custo.second += matriz_adj[this->caminho[i]][this->caminho[i + 1]];
 		}
 	}
-	
+
 	// for(auto it: resultados_parciais){
 	// 	cout << "(" << it.first << ',' << it.second << ")" << ' ';
 	// }
 	// cout << endl;
-	
+
 	obter_melhor_resultado();
 }
 
@@ -198,140 +198,119 @@ void Solucao::obter_melhor_resultado()
 }
 
 // O(1)
-void Solucao::print_melhor_resultado()
+void Solucao::print_resultado()
 {
-	cout << "Vertices - Custo ida - Custo Volta - Função Objetiva" << endl;
-	cout << this->resultados_parciais[this->qtd_vertices / 2].first << ' '
-		 << this->resultados_parciais[this->qtd_vertices / 2].second << ' '
-		 << this->qtd_vertices << ' ' << this->melhor_resultado << endl;
+	cout << setprecision(5) << fixed << this->melhor_resultado / (A * this->qtd_vertices)
+		 << "  |  " << this->tempo << " ms" << endl;
+}
+
+// O(1)
+void Solucao::print_resultado_detalhado()
+{
+	cout << "Vertices: " << this->qtd_vertices << endl
+		 << "Função Objetiva: " << this->melhor_resultado << endl
+		 << "Resultado: " << setprecision(5) << fixed << this->melhor_resultado / (A * this->qtd_vertices) << endl
+		 << "Tempo: " << this->tempo << " ms" << endl;
 }
 
 // O(N)
 void Solucao::print_melhor_caminho()
 {
-	cout << "Caminho" << endl;
-	for (int i = 0; i < this->qtd_vertices; i++)
-		cout << this->caminho[i] << ' ';
+	cout << "Caminho:" << endl;
+	cout << "Linhas A -";
+	for (int i = 0; i < this->resultados_parciais.size() - 1; i++)
+		cout << setw(3) << this->caminho[i * 2] << ' ';
+	cout << endl;
+	cout << "Linhas B -";
+	for (int i = 0; i < this->resultados_parciais.size() - 1; i++)
+		cout << setw(3) << this->caminho[i * 2 + 1] << ' ';
 	cout << endl;
 }
 
-// O(N)
-void Solucao::print_resultado_completo()
+// O(1)
+void Solucao::obter_tempo(clock_t inicio)
 {
-	int cont = 0;
-	cout << "Detalhes dos Resultados" << endl
-		 << "Vertices - Custo ida - Custo Volta" << endl;
-	for (auto it : this->resultados_parciais)
-		cout << 2 * cont++ << ' ' << it.first << ' ' << it.second << endl;
-	cout << endl
-		 << "Caminho" << endl;
-	for (auto it : caminho)
-		cout << it << ' ';
-	cout << endl
-		 << endl;
+	this->tempo = 1000 * (clock() - inicio) / (CLOCKS_PER_SEC * 1.0);
 }
 
-void busca_local(Solucao &atual)
+// O(N³)
+bool bl_linhas_a(Solucao &atual)
 {
 	Solucao nova = atual;
-	vector<pair<int,int>> ordem(nova.resultados_parciais.size() - 1);
+	vector<pair<int, int>> ordem(nova.resultados_parciais.size() - 1);
 	int melhor_resultado = nova.melhor_resultado;
-
+	bool flag = false;
 	obter_ordem(ordem);
 
-	for (int i = 0; i <  ordem.size(); i++)
+	for (int i = 0; i < ordem.size(); i++)
 	{
-		int a = ordem[i].second; 
-		for (int j = i + 1; j <  ordem.size(); j++)
+		int a = ordem[i].second;
+		for (int j = i + 1; j < ordem.size(); j++)
 		{
 			int b = ordem[j].second;
 			nova.trocar_ida(a, b);
 			nova.recalc_resultado();
 
-			// if(nova.melhor_resultado > atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " > " <<  atual.melhor_resultado << endl;
-			// } else if(nova.melhor_resultado == atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " == " <<  atual.melhor_resultado << endl;
-			// } else{
-			// 	cout << nova.melhor_resultado << " < " <<  atual.melhor_resultado << endl;
-			// }
-
-			if(nova.melhor_resultado > atual.melhor_resultado){
+			if (nova.melhor_resultado > atual.melhor_resultado)
+			{
+				flag = true;
 				atual = nova;
-			} else {
+			}
+			else
+			{
 				nova.trocar_ida(a, b);
 			}
 		}
 	}
+	return false;
+}
+
+// O(N³)
+bool bl_linhas_b(Solucao &atual)
+{
+	Solucao nova = atual;
+	vector<pair<int, int>> ordem(nova.resultados_parciais.size() - 1);
+	int melhor_resultado = nova.melhor_resultado;
+	bool flag = false;
 
 	obter_ordem(ordem);
 
 	for (int i = 0; i < ordem.size(); i++)
 	{
-		int a = ordem[i].second; 
-		for (int j = i + 1; j <  ordem.size(); j++)
+		int a = ordem[i].second;
+		for (int j = i + 1; j < ordem.size(); j++)
 		{
 			int b = ordem[j].second;
 			nova.trocar_volta(a, b);
 			nova.recalc_resultado();
 
-			// if(nova.melhor_resultado > atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " > " <<  atual.melhor_resultado << endl;
-			// } else if(nova.melhor_resultado == atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " == " <<  atual.melhor_resultado << endl;
-			// } else{
-			// 	cout << nova.melhor_resultado << " < " <<  atual.melhor_resultado << endl;
-			// }
-
-			if(nova.melhor_resultado > atual.melhor_resultado){
+			if (nova.melhor_resultado > atual.melhor_resultado)
+			{
+				flag = true;
 				atual = nova;
-			} else {
+			}
+			else
+			{
 				nova.trocar_volta(b, a);
 			}
-		
 		}
 	}
-
-	obter_ordem(ordem);
-
-	for (int i = 0; i <  ordem.size(); i++)
-	{
-		int a = ordem[i].second; 
-		for (int j = i + 1; j <  ordem.size(); j++)
-		{
-			int b = ordem[j].second;
-			nova.reposicionar_pares(a,b);
-			nova.recalc_resultado();
-			
-			// if(nova.melhor_resultado > atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " > " <<  atual.melhor_resultado << endl;
-			// } else if(nova.melhor_resultado == atual.melhor_resultado){
-			// 	cout << nova.melhor_resultado << " == " <<  atual.melhor_resultado << endl;
-			// } else{
-			// 	cout << nova.melhor_resultado << " < " <<  atual.melhor_resultado << endl;
-			// }
-
-			
-			if(nova.melhor_resultado > atual.melhor_resultado){
-				atual = nova;
-			} else {
-				nova.reposicionar_pares(b,a);
-			}		
-		}
-	}
+	return flag;
 }
 
-// O(1)
-int calc_custo_mov(int atual, vector<int> &caminho_atual)
+// O(N²)
+void bl_nojump(Solucao &atual, int lado)
 {
-	if (caminho_atual.size() < 2)
-		return min(dist[atual] + ident[atual], lim_custo_mov);
-
-	int ant = caminho_atual[caminho_atual.size() - 2];
-
-	return min(
-		abs(dist[atual] - dist[ant]) + 50 * ((dist[atual] - dist[ant]) == 0) + abs(ident[atual] - ident[ant]),
-		lim_custo_mov);
+	for (int i = 0; i < atual.resultados_parciais.size() - 1; i++)
+	{
+		for (int j = 1; j < atual.resultados_parciais.size() - 1 - i; j++)
+		{
+			if (atual.caminho[j * 2 + lado] > atual.caminho[(j - 1) * 2 + lado])
+				continue;
+			atual.reposicionar_pares(j - 1, j);
+		}
+	}
+	atual.recalc_resultado();
 }
 
 // O(log(N)*N)
@@ -340,18 +319,18 @@ int obter_linha_inicial(int linhas)
 	vector<pair<int, int>> opcoes;
 	for (int i = 0; i < linhas; i++)
 	{
-		int custo = min(dist[i] + ident[i], 300);
-		opcoes.push_back({custo + rd() % 300, i});
+		opcoes.push_back({i * 5 + rd() % 300, i});
 	}
 	sort(opcoes.begin(), opcoes.end());
 	return opcoes.front().second;
 }
 
 // O(log(N)*N)
-void obter_ordem(vector<pair<int,int>> &v){
-	for(int i = 0; i < v.size(); i++)
-		v[i] = {i + rd() % int (OMEGA*v.size()), i};
-	sort(v.begin(),v.end());
+void obter_ordem(vector<pair<int, int>> &v)
+{
+	for (int i = 0; i < v.size(); i++)
+		v[i] = {i + rd() % int(OMEGA * v.size()), i};
+	sort(v.begin(), v.end());
 }
 
 // O(log(N)*N²)
@@ -365,7 +344,6 @@ void dfs(int v, int custo_ida, int custo_volta, bool ida)
 	{
 		if (visitados[it.second])
 			continue;
-		it.first += calc_custo_mov(it.second, caminho);
 		melhores.push_back(it);
 	}
 

@@ -1,9 +1,9 @@
 #include "bits/stdc++.h"
 #define ALPHA 3
 #define OMEGA 3
-#define LIMITE 1
-#define TOP 3
-#define A 350.0
+#define LIMITE_T 0.1
+#define TOP 1
+#define A 200.0
 using namespace std;
 
 void debug(string message)
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	}
 
 	vector<Solucao> solucoes;
-	while ((clock() - inicio) / (CLOCKS_PER_SEC * 1.0) < LIMITE)
+	while ((clock() - inicio) / (CLOCKS_PER_SEC * 1.0) < LIMITE_T)
 	{
 		int linha_inicial = obter_linha_inicial(linhas_a);
 		Solucao a = grasp(n, 0);
